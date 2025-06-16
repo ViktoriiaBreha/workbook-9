@@ -37,4 +37,24 @@ public class SimpleProductDao implements ProductDao{
         }
     }
 
+    @Override
+    public void update(Product updatedProd) {
+        for (int i = 0; i < products.size(); i++){
+            if (products.get(i).getProductId() == updatedProd.getProductId()){
+                products.set(i, updatedProd);
+                return;
+            }
+        }
+    }
+
+    @Override
+    public Product findById(int productId) {
+        for (Product product : products){
+            if (product.getProductId() == productId){
+                return product;
+            }
+        }
+        return null;
+    }
+
 }
