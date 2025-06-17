@@ -15,24 +15,22 @@ import java.util.List;
 
 @Component
 public class JDBCProductDao implements ProductDao{
-    private List<Product> products;
     private DataSource dataSource;
 
     @Autowired
     public JDBCProductDao (DataSource dataSource){
-        this.products = new ArrayList<>();
         this.dataSource = dataSource;
     }
 
     @Override
     public List<Product> getAll(){
-        this.products.clear();
+        List <Product> products = new ArrayList<>();
         String query = "SELECT ProductId, ProductName, CategoryId, UnitPrice FROM Products";
         try(Connection connection = dataSource.getConnection()){
             PreparedStatement statement = connection.prepareStatement(query);
             ResultSet rows = statement.executeQuery();
             while(rows.next()){
-                this.products.add(new Product(
+                products.add(new Product(
                         rows.getInt(1),
                         rows.getString(2),
                         rows.getString(3),
@@ -41,7 +39,7 @@ public class JDBCProductDao implements ProductDao{
         } catch (SQLException e){
             e.printStackTrace();
         }
-        return this.products;
+        return products;
     }
     @Override
     public void add(Product product) {
@@ -113,5 +111,54 @@ public class JDBCProductDao implements ProductDao{
         }
 
         return null;
+    }
+
+    @Override
+    public Product getName (String name) {
+        String query = "SELECT ProductId, ProductName, CategoryId, UnitPrice FROM Products WHERE ProductName LIKE ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, "%" + name + "%");
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return new Product(
+                        rs.getInt("ProductId"),
+                        rs.getString("ProductName"),
+                        rs.getString("CategoryId"),
+                        rs.getDouble("UnitPrice")
+                );
+            }
+
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Error finding product", e);
+        }
+        return null;
+    }
+
+    public  List<Product> getByPrice (double min, double max){
+        List<Product> products = new ArrayList<>();
+            String query = "SELECT ProductId, ProductName, CategoryId, UnitPrice FROM Products WHERE UnitPrice " +
+                    "BETWEEN ? AND ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)){
+            stmt.setDouble(1, min);
+            stmt.setDouble(2, max);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                 products.add(new Product(
+                        rs.getInt("ProductId"),
+                        rs.getString("ProductName"),
+                        rs.getString("CategoryId"),
+                        rs.getDouble("UnitPrice")
+                ));
+            }
+
+        }catch (SQLException e) {
+            throw new RuntimeException("Error finding product", e);
+        }
+         return products;
     }
 }
